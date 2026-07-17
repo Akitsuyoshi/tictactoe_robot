@@ -18,9 +18,9 @@ find_package(control_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
 
 # Executables
-add_executable(plan_and_execute_trajectory_sim src/plan_and_execute_trajectory_sim.cpp)
-target_include_directories(plan_and_execute_trajectory_sim PUBLIC include)
-ament_target_dependencies(plan_and_execute_trajectory_sim
+add_executable(motion_controller_sim src/motion_controller_sim.cpp)
+target_include_directories(motion_controller_sim PUBLIC include)
+ament_target_dependencies(motion_controller_sim
     ament_cmake
     rclcpp
     rclcpp_action
@@ -32,12 +32,13 @@ ament_target_dependencies(plan_and_execute_trajectory_sim
 )
 
 install(TARGETS 
-    plan_and_execute_trajectory_sim
+    motion_controller_sim
     DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY 
     launch
+	config
     DESTINATION share/${PROJECT_NAME}
 )
 
