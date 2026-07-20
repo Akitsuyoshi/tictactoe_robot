@@ -15,7 +15,7 @@ MotionControllerSim::MotionControllerSim(const rclcpp::Node::SharedPtr &node)
 
   // Spin node
   executor_.add_node(node_);
-  std::thread([this]() { this->executor_.spin(); }).detach();
+  executor_thread_ = std::thread([this]() { executor_.spin(); });
 
   move_group_arm_ =
       std::make_shared<MoveGroupInterface>(node_, PLANNING_GROUP_ARM);
@@ -28,6 +28,7 @@ MotionControllerSim::MotionControllerSim(const rclcpp::Node::SharedPtr &node)
                                           joint_group_positions_);
 
   move_group_arm_->setStartStateToCurrentState();
+  current_pose_ = move_group_arm_->getCurrentPose().pose;
 
   RCLCPP_INFO(LOGGER, "Planning Frame: %s",
               move_group_arm_->getPlanningFrame().c_str());
@@ -40,25 +41,50 @@ MotionControllerSim::MotionControllerSim(const rclcpp::Node::SharedPtr &node)
 }
 
 MotionControllerSim::~MotionControllerSim() {
+  executor_.cancel();
+  if (executor_thread_.joinable()) {
+    executor_thread_.join();
+  }
   RCLCPP_INFO(LOGGER, "MotionControllerSim terminated.");
 }
 
 void MotionControllerSim::executeTrajectory() {
   RCLCPP_INFO(LOGGER, "Executing trajectory");
 
-  if (!approach())
+  if (!moveToCell(5))
     return;
-  rclcpp::sleep_for(1s);
 
-  if (!retreat())
+  if (!drawLines(0.05))
     return;
-  rclcpp::sleep_for(1s);
 
-  // drawCircle(2.0);
+  if (!moveToCell(3))
+    return;
 
-  drawLines(0.01);
+  if (!drawCircle(0.02))
+    return;
+
+  if (!moveToCell(9))
+    return;
+
+  if (!drawCross(0.02))
+    return;
 
   RCLCPP_INFO(LOGGER, "Trajectory complete");
+}
+
+bool MotionControllerSim::moveToCell(int cell) {
+  Pose target = getCellPose(cell);
+  target.position.z += approach_distance_;
+  move_group_arm_->setPoseTarget(target);
+
+  Plan plan;
+  auto result = move_group_arm_->plan(plan);
+  if (result != moveit::core::MoveItErrorCode::SUCCESS) {
+    return false;
+  }
+
+  return move_group_arm_->execute(plan) ==
+         moveit::core::MoveItErrorCode::SUCCESS;
 }
 
 bool MotionControllerSim::approach() {
@@ -82,21 +108,41 @@ bool MotionControllerSim::retreat() {
 }
 
 bool MotionControllerSim::drawCircle(double radius) {
-  auto waypoints = PathGenerator::generateCircle(currentPose(), radius);
+  auto stroke = PathGenerator::generateCircle(currentPose(), radius);
 
-  return executeCartesian(waypoints, "Draw Circle");
+  return executeCartesian(stroke, "Draw Circle");
 }
 
 bool MotionControllerSim::drawCross(double size) {
-  auto waypoints = PathGenerator::generateCross(currentPose(), size);
+  auto strokes = PathGenerator::generateCross(currentPose(), size);
 
-  return executeCartesian(waypoints, "Draw Cross");
+  return executeStrokes(strokes, "Draw Cross");
 }
 
 bool MotionControllerSim::drawLines(double cell_size) {
-  auto waypoints = PathGenerator::generateGrid(currentPose(), cell_size);
+  auto strokes = PathGenerator::generateGrid(currentPose(), cell_size);
 
-  return executeCartesian(waypoints, "Draw Lines");
+  return executeStrokes(strokes, "Draw Lines");
+}
+
+bool MotionControllerSim::executeStrokes(
+    const std::vector<PathGenerator::Stroke> &strokes,
+    const std::string &name) {
+  for (const auto &stroke : strokes) {
+    if (!approach())
+      return false;
+    rclcpp::sleep_for(1s);
+
+    if (!executeCartesian(stroke, name))
+      return false;
+    rclcpp::sleep_for(1s);
+
+    if (!retreat())
+      return false;
+    rclcpp::sleep_for(1s);
+  }
+
+  return true;
 }
 
 MotionControllerSim::Pose MotionControllerSim::currentPose() const {
@@ -107,20 +153,20 @@ bool MotionControllerSim::executeCartesian(const std::vector<Pose> &waypoints,
                                            const std::string &plan_name) {
   RCLCPP_INFO(LOGGER, "Planning %s", plan_name.c_str());
 
-  cartesian_plan_.joint_trajectory.points.clear();
-
   move_group_arm_->setStartStateToCurrentState();
+  RobotTrajectory trajectory;
 
   double fraction = move_group_arm_->computeCartesianPath(
-      waypoints, END_EFFECTOR_STEP, JUMP_THRESHOLD, cartesian_plan_, true);
+      waypoints, END_EFFECTOR_STEP, JUMP_THRESHOLD, trajectory, true);
   if (fraction < MIN_CARTESIAN_FRACTION) {
     RCLCPP_ERROR(LOGGER, "Cartesian path fraction %.3f", fraction);
     return false;
   }
 
-  auto result = move_group_arm_->execute(cartesian_plan_);
+  auto result = move_group_arm_->execute(trajectory);
   if (result != moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_ERROR(LOGGER, "Execution failed.");
+    move_group_arm_->stop();
+    RCLCPP_ERROR(LOGGER, "Execution failed. Error code: %d", result.val);
     return false;
   }
 
@@ -139,4 +185,29 @@ void MotionControllerSim::getParameters() {
 
   RCLCPP_INFO(LOGGER, "approach_distance = %.3f", approach_distance_);
   RCLCPP_INFO(LOGGER, "retreat_distance = %.3f", retreat_distance_);
+
+  for (int i = 1; i <= 9; ++i) {
+    auto values = node_->declare_parameter<std::vector<double>>(
+        "board.cells." + std::to_string(i));
+    if (values.size() != 7) {
+      throw std::runtime_error("Cell " + std::to_string(i) +
+                               " must contain [x, y, z, x, y, z, w]");
+    }
+
+    Pose pose;
+    pose.position.x = values[0];
+    pose.position.y = values[1];
+    pose.position.z = values[2];
+
+    pose.orientation.x = values[3];
+    pose.orientation.y = values[4];
+    pose.orientation.z = values[5];
+    pose.orientation.w = values[6];
+
+    cell_poses_[i - 1] = pose;
+  }
+}
+
+MotionControllerSim::Pose MotionControllerSim::getCellPose(int cell) const {
+  return cell_poses_.at(cell - 1);
 }

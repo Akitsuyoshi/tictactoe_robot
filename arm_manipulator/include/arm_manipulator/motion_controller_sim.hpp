@@ -2,6 +2,7 @@
 #define MOTION_CONTROLLER_SIM_HPP
 
 #include "rclcpp/node.hpp"
+#include <array>
 #include <memory>
 #include <string>
 #include <thread>
@@ -12,6 +13,7 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
+#include "arm_manipulator/path_generator.hpp"
 #include <geometry_msgs/msg/pose.hpp>
 #include <moveit_msgs/msg/robot_trajectory.hpp>
 
@@ -32,6 +34,9 @@ public:
   bool drawCross(double size);
   bool drawLines(double cell_size);
 
+  bool executeStrokes(const std::vector<PathGenerator::Stroke> &strokes,
+                      const std::string &name);
+
 private:
   using MoveGroupInterface = moveit::planning_interface::MoveGroupInterface;
   using JointModelGroup = moveit::core::JointModelGroup;
@@ -48,22 +53,26 @@ private:
   //-----------------------
   // Motion helpers
   //-----------------------
+  bool moveToCell(int cell);
   void setupNamedPose(const std::string &pose_name);
 
   bool executeCartesian(const std::vector<Pose> &waypoints,
                         const std::string &plan_name);
 
   Pose currentPose() const;
+  Pose getCellPose(int cell) const;
 
   //-----------------------
   // Members
   //-----------------------
   rclcpp::Node::SharedPtr node_;
   rclcpp::executors::SingleThreadedExecutor executor_;
+  std::thread executor_thread_;
   std::shared_ptr<MoveGroupInterface> move_group_arm_;
   const JointModelGroup *joint_model_group_arm_;
 
   RobotStatePtr current_state_;
+  Pose current_pose_;
 
   std::vector<double> joint_group_positions_;
 
@@ -74,6 +83,7 @@ private:
   //-----------------------
   double approach_distance_;
   double retreat_distance_;
+  std::array<Pose, 9> cell_poses_;
 
   //-----------------------
   // Planning constants

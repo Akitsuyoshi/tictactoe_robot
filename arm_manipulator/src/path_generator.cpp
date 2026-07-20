@@ -1,61 +1,52 @@
 #include "arm_manipulator/path_generator.hpp"
 
-std::vector<PathGenerator::Pose>
-PathGenerator::generateCircle(const Pose &center, double radius, int points) {
-  std::vector<Pose> waypoints;
+PathGenerator::Stroke PathGenerator::generateCircle(const Pose &center,
+                                                    double radius, int points) {
+  Stroke stroke;
 
   for (int i = 0; i <= points; i++) {
     double theta = 2.0 * M_PI * i / points;
     double x = radius * cos(theta);
     double y = radius * sin(theta);
-    waypoints.push_back(offsetPose(center, x, y));
+    stroke.push_back(offsetPose(center, x, y));
   }
 
-  return waypoints;
+  return stroke;
 }
 
-std::vector<PathGenerator::Pose>
+std::vector<PathGenerator::Stroke>
 PathGenerator::generateCross(const Pose &center, double size) {
-  std::vector<Pose> waypoints;
+  std::vector<Stroke> strokes;
 
   double h = size / 2.0;
 
   // First diagonal
-  waypoints.push_back(offsetPose(center, -h, -h));
-  waypoints.push_back(offsetPose(center, h, h));
-
-  // Lift is handled by robot controller
-
+  strokes.push_back({offsetPose(center, -h, -h), offsetPose(center, h, h)});
   // Second diagonal
-  waypoints.push_back(offsetPose(center, -h, h));
-  waypoints.push_back(offsetPose(center, h, -h));
+  strokes.push_back({offsetPose(center, -h, h), offsetPose(center, h, -h)});
 
-  return waypoints;
+  return strokes;
 }
 
-std::vector<PathGenerator::Pose> PathGenerator::generateGrid(const Pose &center,
-                                                             double cell_size) {
-  std::vector<Pose> waypoints;
+std::vector<PathGenerator::Stroke>
+PathGenerator::generateGrid(const Pose &center, double cell_size) {
+  std::vector<Stroke> strokes;
 
   double half = cell_size * 1.5;
 
-  // Vertical line 1
-  waypoints.push_back(offsetPose(center, -cell_size / 2, -half));
-  waypoints.push_back(offsetPose(center, -cell_size / 2, half));
+  strokes.push_back({offsetPose(center, -cell_size / 2, -half),
+                     offsetPose(center, -cell_size / 2, half)});
 
-  // Vertical line 2
-  waypoints.push_back(offsetPose(center, cell_size / 2, -half));
-  waypoints.push_back(offsetPose(center, cell_size / 2, half));
+  strokes.push_back({offsetPose(center, cell_size / 2, -half),
+                     offsetPose(center, cell_size / 2, half)});
 
-  // Horizontal line 1
-  waypoints.push_back(offsetPose(center, -half, -cell_size / 2));
-  waypoints.push_back(offsetPose(center, half, -cell_size / 2));
+  strokes.push_back({offsetPose(center, -half, -cell_size / 2),
+                     offsetPose(center, half, -cell_size / 2)});
 
-  // Horizontal line 2
-  waypoints.push_back(offsetPose(center, -half, cell_size / 2));
-  waypoints.push_back(offsetPose(center, half, cell_size / 2));
+  strokes.push_back({offsetPose(center, -half, cell_size / 2),
+                     offsetPose(center, half, cell_size / 2)});
 
-  return waypoints;
+  return strokes;
 }
 
 PathGenerator::Pose PathGenerator::offsetPose(const Pose &pose, double x,
