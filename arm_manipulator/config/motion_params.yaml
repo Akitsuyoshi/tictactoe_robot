@@ -1,4 +1,4 @@
 motion_controller_sim:
   ros__parameters:
-    approach_distance: 0.09
-    retreat_distance: 0.01
+    approach_distance: 0.00
+    retreat_distance: 0.00

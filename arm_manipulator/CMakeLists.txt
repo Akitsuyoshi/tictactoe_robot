@@ -18,7 +18,11 @@ find_package(control_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
 
 # Executables
-add_executable(motion_controller_sim src/motion_controller_sim.cpp)
+add_executable(motion_controller_sim 
+	src/main.cpp
+	src/motion_controller_sim.cpp
+	src/path_generator.cpp
+)
 target_include_directories(motion_controller_sim PUBLIC include)
 ament_target_dependencies(motion_controller_sim
     ament_cmake
@@ -29,6 +33,7 @@ ament_target_dependencies(motion_controller_sim
     interactive_markers
     moveit_ros_planning
     control_msgs
+	moveit_msgs
 )
 
 install(TARGETS 
