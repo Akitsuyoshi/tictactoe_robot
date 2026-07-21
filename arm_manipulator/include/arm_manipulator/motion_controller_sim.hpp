@@ -30,9 +30,9 @@ public:
   bool retreat();
 
   /// Drawing primitives
-  bool drawCircle(double radius);
-  bool drawCross(double size);
-  bool drawLines(double cell_size);
+  bool drawCircle(int cell, double radius);
+  bool drawCross(int cell, double size);
+  bool drawLines(int cell, double cell_size);
 
   bool executeStrokes(const std::vector<PathGenerator::Stroke> &strokes,
                       const std::string &name);
@@ -72,17 +72,14 @@ private:
   const JointModelGroup *joint_model_group_arm_;
 
   RobotStatePtr current_state_;
-  Pose current_pose_;
-
-  std::vector<double> joint_group_positions_;
-
-  RobotTrajectory cartesian_plan_;
 
   //-----------------------
   // Parameters
   //-----------------------
-  double approach_distance_;
-  double retreat_distance_;
+  double offset_distance_;
+  double circle_radius_;
+  double cross_size_;
+  double grid_cell_size_;
   std::array<Pose, 9> cell_poses_;
 
   //-----------------------
