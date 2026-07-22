@@ -43,10 +43,18 @@ Launch rviz2:
 ros2 launch piper_with_gripper_moveit moveit_rviz.launch.py
 ```
 
-To build and launch motion controller sim:
+To build and launch motion controller in sim:
 
 ```bash
 cd ~/ros2_ws/
 colcon build --symlink-install --packages-select arm_manipulator && source install/setup.bash
 ros2 launch arm_manipulator motion_controller_sim.launch.py
+```
+
+To build and launch motion controller in real:
+
+```bash
+cd ~/ros2_ws/
+colcon build --symlink-install --packages-select arm_manipulator && source install/setup.bash
+ros2 launch arm_manipulator motion_controller_real.launch.py
 ```
