@@ -11,8 +11,8 @@ public:
   using Pose = geometry_msgs::msg::Pose;
   using Stroke = std::vector<Pose>;
 
-  static Stroke generateCircle(const Pose &center, double radius,
-                               int points = 60);
+  static std::vector<Stroke> generateCircle(const Pose &center, double radius,
+                                            int points = 30);
 
   static std::vector<Stroke> generateCross(const Pose &center, double size);
 

@@ -1,7 +1,7 @@
 #include "arm_manipulator/path_generator.hpp"
 
-PathGenerator::Stroke PathGenerator::generateCircle(const Pose &center,
-                                                    double radius, int points) {
+std::vector<PathGenerator::Stroke>
+PathGenerator::generateCircle(const Pose &center, double radius, int points) {
   Stroke stroke;
 
   for (int i = 0; i <= points; i++) {
@@ -11,7 +11,7 @@ PathGenerator::Stroke PathGenerator::generateCircle(const Pose &center,
     stroke.push_back(offsetPose(center, x, y));
   }
 
-  return stroke;
+  return {stroke};
 }
 
 std::vector<PathGenerator::Stroke>
@@ -34,17 +34,17 @@ PathGenerator::generateGrid(const Pose &center, double cell_size) {
 
   double half = cell_size * 1.5;
 
-  strokes.push_back({offsetPose(center, -cell_size / 2, -half),
-                     offsetPose(center, -cell_size / 2, half)});
+  strokes.push_back({offsetPose(center, half, cell_size / 2),
+                     offsetPose(center, -half, cell_size / 2)});
 
-  strokes.push_back({offsetPose(center, cell_size / 2, -half),
-                     offsetPose(center, cell_size / 2, half)});
+  strokes.push_back({offsetPose(center, half, -cell_size / 2),
+                     offsetPose(center, -half, -cell_size / 2)});
 
-  strokes.push_back({offsetPose(center, -half, -cell_size / 2),
-                     offsetPose(center, half, -cell_size / 2)});
+  strokes.push_back({offsetPose(center, cell_size / 2, half),
+                     offsetPose(center, cell_size / 2, -half)});
 
-  strokes.push_back({offsetPose(center, -half, cell_size / 2),
-                     offsetPose(center, half, cell_size / 2)});
+  strokes.push_back({offsetPose(center, -cell_size / 2, half),
+                     offsetPose(center, -cell_size / 2, -half)});
 
   return strokes;
 }

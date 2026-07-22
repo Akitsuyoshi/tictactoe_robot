@@ -17,22 +17,27 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <moveit_msgs/msg/robot_trajectory.hpp>
 
-class MotionControllerSim {
+class MotionControllerSim : public rclcpp::Node {
+  using Pose = geometry_msgs::msg::Pose;
+
 public:
-  explicit MotionControllerSim(const rclcpp::Node::SharedPtr &node);
+  explicit MotionControllerSim();
   ~MotionControllerSim();
+
+  void initialize();
 
   /// Execute a demo trajectory
   void executeTrajectory();
 
   /// Motion primitives
+  bool moveAbove(const Pose &pose);
   bool approach();
   bool retreat();
 
   /// Drawing primitives
-  bool drawCircle(int cell, double radius);
-  bool drawCross(int cell, double size);
-  bool drawLines(int cell, double cell_size);
+  bool drawCircle(int cell);
+  bool drawCross(int cell);
+  bool drawLines(int cell = 5);
 
   bool executeStrokes(const std::vector<PathGenerator::Stroke> &strokes,
                       const std::string &name);
@@ -42,7 +47,6 @@ private:
   using JointModelGroup = moveit::core::JointModelGroup;
   using RobotStatePtr = moveit::core::RobotStatePtr;
   using Plan = MoveGroupInterface::Plan;
-  using Pose = geometry_msgs::msg::Pose;
   using RobotTrajectory = moveit_msgs::msg::RobotTrajectory;
 
   //-----------------------
@@ -53,7 +57,6 @@ private:
   //-----------------------
   // Motion helpers
   //-----------------------
-  bool moveToCell(int cell);
   void setupNamedPose(const std::string &pose_name);
 
   bool executeCartesian(const std::vector<Pose> &waypoints,
@@ -61,13 +64,11 @@ private:
 
   Pose currentPose() const;
   Pose getCellPose(int cell) const;
+  void logCurrentPose() const;
 
   //-----------------------
   // Members
   //-----------------------
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::executors::SingleThreadedExecutor executor_;
-  std::thread executor_thread_;
   std::shared_ptr<MoveGroupInterface> move_group_arm_;
   const JointModelGroup *joint_model_group_arm_;
 
@@ -86,10 +87,9 @@ private:
   // Planning constants
   //-----------------------
   static constexpr double JUMP_THRESHOLD = 0.0;
-  static constexpr double END_EFFECTOR_STEP = 0.01;
+  static constexpr double END_EFFECTOR_STEP = 0.005;
   static constexpr double MIN_CARTESIAN_FRACTION = 0.99;
 
-  static const rclcpp::Logger LOGGER;
   static const std::string PLANNING_GROUP_ARM;
 };
 
