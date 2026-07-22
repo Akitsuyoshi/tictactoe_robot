@@ -18,13 +18,13 @@ find_package(control_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
 
 # Executables
-add_executable(motion_controller_sim 
+add_executable(motion_controller 
 	src/main.cpp
-	src/motion_controller_sim.cpp
+	src/motion_controller.cpp
 	src/path_generator.cpp
 )
-target_include_directories(motion_controller_sim PUBLIC include)
-ament_target_dependencies(motion_controller_sim
+target_include_directories(motion_controller PUBLIC include)
+ament_target_dependencies(motion_controller
     ament_cmake
     rclcpp
     rclcpp_action
@@ -37,7 +37,7 @@ ament_target_dependencies(motion_controller_sim
 )
 
 install(TARGETS 
-    motion_controller_sim
+    motion_controller
     DESTINATION lib/${PROJECT_NAME}
 )
 

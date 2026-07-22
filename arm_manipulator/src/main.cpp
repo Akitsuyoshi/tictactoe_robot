@@ -1,10 +1,10 @@
-#include "arm_manipulator/motion_controller_sim.hpp"
+#include "arm_manipulator/motion_controller.hpp"
 #include <memory>
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
 
-  auto controller = std::make_shared<MotionControllerSim>();
+  auto controller = std::make_shared<MotionController>();
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller);

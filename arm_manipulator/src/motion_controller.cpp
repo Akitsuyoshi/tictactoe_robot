@@ -1,22 +1,22 @@
-#include "arm_manipulator/motion_controller_sim.hpp"
+#include "arm_manipulator/motion_controller.hpp"
 #include "arm_manipulator/path_generator.hpp"
 
 #include <chrono>
 
 using namespace std::chrono_literals;
 
-const std::string MotionControllerSim::PLANNING_GROUP_ARM = "arm";
+const std::string MotionController::PLANNING_GROUP_ARM = "arm";
 
-MotionControllerSim::MotionControllerSim() : Node("motion_controller_sim") {
+MotionController::MotionController() : Node("motion_controller") {
   getParameters();
 }
 
-MotionControllerSim::~MotionControllerSim() {
-  RCLCPP_INFO(get_logger(), "MotionControllerSim terminated.");
+MotionController::~MotionController() {
+  RCLCPP_INFO(get_logger(), "MotionController terminated.");
 }
 
-void MotionControllerSim::initialize() {
-  RCLCPP_INFO(get_logger(), "Initializing MotionControllerSim...");
+void MotionController::initialize() {
+  RCLCPP_INFO(get_logger(), "Initializing MotionController...");
   move_group_arm_ = std::make_shared<MoveGroupInterface>(shared_from_this(),
                                                          PLANNING_GROUP_ARM);
 
@@ -47,10 +47,10 @@ void MotionControllerSim::initialize() {
   // Set start state of robot to current state
   move_group_arm_->setStartStateToCurrentState();
 
-  RCLCPP_INFO(get_logger(), "MotionControllerSim initialized.");
+  RCLCPP_INFO(get_logger(), "MotionController initialized.");
 }
 
-void MotionControllerSim::executeTrajectory() {
+void MotionController::executeTrajectory() {
   RCLCPP_INFO(get_logger(), "Executing trajectory");
 
   if (!drawLines()) {
@@ -64,7 +64,7 @@ void MotionControllerSim::executeTrajectory() {
   RCLCPP_INFO(get_logger(), "Trajectory complete");
 }
 
-bool MotionControllerSim::moveAbove(const Pose &pose) {
+bool MotionController::moveAbove(const Pose &pose) {
   Pose start = currentPose();
   Pose end = pose;
   end.position.z += offset_distance_;
@@ -74,7 +74,7 @@ bool MotionControllerSim::moveAbove(const Pose &pose) {
   return executeCartesian(waypoints, "Move Above Stroke");
 }
 
-bool MotionControllerSim::approach() {
+bool MotionController::approach() {
   Pose start = currentPose();
   Pose end = start;
   end.position.z -= offset_distance_;
@@ -84,7 +84,7 @@ bool MotionControllerSim::approach() {
   return executeCartesian(waypoints, "Approach");
 }
 
-bool MotionControllerSim::retreat() {
+bool MotionController::retreat() {
   Pose start = currentPose();
   Pose end = start;
   end.position.z += offset_distance_;
@@ -94,27 +94,27 @@ bool MotionControllerSim::retreat() {
   return executeCartesian(waypoints, "Retreat");
 }
 
-bool MotionControllerSim::drawCircle(int cell) {
+bool MotionController::drawCircle(int cell) {
   auto strokes =
       PathGenerator::generateCircle(getCellPose(cell), circle_radius_);
 
   return executeStrokes(strokes, "Draw Circle");
 }
 
-bool MotionControllerSim::drawCross(int cell) {
+bool MotionController::drawCross(int cell) {
   auto strokes = PathGenerator::generateCross(getCellPose(cell), cross_size_);
 
   return executeStrokes(strokes, "Draw Cross");
 }
 
-bool MotionControllerSim::drawLines(int cell) {
+bool MotionController::drawLines(int cell) {
   auto strokes =
       PathGenerator::generateGrid(getCellPose(cell), grid_cell_size_);
 
   return executeStrokes(strokes, "Draw Lines");
 }
 
-bool MotionControllerSim::executeStrokes(
+bool MotionController::executeStrokes(
     const std::vector<PathGenerator::Stroke> &strokes,
     const std::string &name) {
   for (const auto &stroke : strokes) {
@@ -149,11 +149,11 @@ bool MotionControllerSim::executeStrokes(
   return true;
 }
 
-MotionControllerSim::Pose MotionControllerSim::currentPose() const {
+MotionController::Pose MotionController::currentPose() const {
   return move_group_arm_->getCurrentPose().pose;
 }
 
-void MotionControllerSim::logCurrentPose() const {
+void MotionController::logCurrentPose() const {
   auto pose = currentPose();
 
   RCLCPP_INFO(get_logger(),
@@ -172,8 +172,8 @@ void MotionControllerSim::logCurrentPose() const {
               pose.orientation.w);
 }
 
-bool MotionControllerSim::executeCartesian(const std::vector<Pose> &waypoints,
-                                           const std::string &plan_name) {
+bool MotionController::executeCartesian(const std::vector<Pose> &waypoints,
+                                        const std::string &plan_name) {
   RCLCPP_INFO(get_logger(), "Planning %s", plan_name.c_str());
 
   move_group_arm_->setStartStateToCurrentState();
@@ -201,11 +201,11 @@ bool MotionControllerSim::executeCartesian(const std::vector<Pose> &waypoints,
   return true;
 }
 
-void MotionControllerSim::setupNamedPose(const std::string &pose_name) {
+void MotionController::setupNamedPose(const std::string &pose_name) {
   move_group_arm_->setNamedTarget(pose_name);
 }
 
-void MotionControllerSim::getParameters() {
+void MotionController::getParameters() {
   offset_distance_ = declare_parameter("offset_distance", 0.00);
   circle_radius_ = declare_parameter("circle_radius", 0.00);
   cross_size_ = declare_parameter("cross_size", 0.00);
@@ -238,6 +238,6 @@ void MotionControllerSim::getParameters() {
   }
 }
 
-MotionControllerSim::Pose MotionControllerSim::getCellPose(int cell) const {
+MotionController::Pose MotionController::getCellPose(int cell) const {
   return cell_poses_.at(cell - 1);
 }

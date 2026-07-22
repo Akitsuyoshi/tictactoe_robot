@@ -1,4 +1,4 @@
-  motion_controller_sim:
+  motion_controller:
     ros__parameters:
       offset_distance: 0.02
       circle_radius: 0.02

@@ -1,5 +1,5 @@
-#ifndef MOTION_CONTROLLER_SIM_HPP
-#define MOTION_CONTROLLER_SIM_HPP
+#ifndef MOTION_CONTROLLER_HPP
+#define MOTION_CONTROLLER_HPP
 
 #include "rclcpp/node.hpp"
 #include <array>
@@ -17,12 +17,12 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <moveit_msgs/msg/robot_trajectory.hpp>
 
-class MotionControllerSim : public rclcpp::Node {
+class MotionController : public rclcpp::Node {
   using Pose = geometry_msgs::msg::Pose;
 
 public:
-  explicit MotionControllerSim();
-  ~MotionControllerSim();
+  explicit MotionController();
+  ~MotionController();
 
   void initialize();
 
