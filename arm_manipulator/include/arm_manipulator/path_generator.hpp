@@ -12,7 +12,7 @@ public:
   using Stroke = std::vector<Pose>;
 
   static std::vector<Stroke> generateCircle(const Pose &center, double radius,
-                                            int points = 30);
+                                            int points = 60);
 
   static std::vector<Stroke> generateCross(const Pose &center, double size);
 

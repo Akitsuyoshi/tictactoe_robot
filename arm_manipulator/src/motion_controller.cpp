@@ -7,22 +7,23 @@ using namespace std::chrono_literals;
 
 const std::string MotionController::PLANNING_GROUP_ARM = "arm";
 
-MotionController::MotionController() : Node("motion_controller") {
+MotionController::MotionController(const rclcpp::Node::SharedPtr &node)
+    : node_(node) {
   getParameters();
 }
 
 MotionController::~MotionController() {
-  RCLCPP_INFO(get_logger(), "MotionController terminated.");
+  RCLCPP_INFO(node_->get_logger(), "MotionController terminated.");
 }
 
 void MotionController::initialize() {
-  RCLCPP_INFO(get_logger(), "Initializing MotionController...");
-  move_group_arm_ = std::make_shared<MoveGroupInterface>(shared_from_this(),
-                                                         PLANNING_GROUP_ARM);
+  RCLCPP_INFO(node_->get_logger(), "Initializing MotionController...");
+  move_group_arm_ =
+      std::make_shared<MoveGroupInterface>(node_, PLANNING_GROUP_ARM);
 
   // Wait to get new states
-  move_group_arm_->startStateMonitor();
-  rclcpp::sleep_for(1s);
+  //   move_group_arm_->startStateMonitor();
+  //   rclcpp::sleep_for(1s);
 
   current_state_ = move_group_arm_->getCurrentState(10.0);
   if (!current_state_) {
@@ -32,36 +33,53 @@ void MotionController::initialize() {
       current_state_->getJointModelGroup(PLANNING_GROUP_ARM);
 
   // Print out system info
-  RCLCPP_INFO(get_logger(), "Planning Frame: %s",
+  RCLCPP_INFO(node_->get_logger(), "Planning Frame: %s",
               move_group_arm_->getPlanningFrame().c_str());
-  RCLCPP_INFO(get_logger(), "End Effector Link: %s",
+  RCLCPP_INFO(node_->get_logger(), "End Effector Link: %s",
               move_group_arm_->getEndEffectorLink().c_str());
-  RCLCPP_INFO(get_logger(), "Available Planning Groups:");
+  RCLCPP_INFO(node_->get_logger(), "Available Planning Groups:");
   std::vector<std::string> group_names =
       move_group_arm_->getJointModelGroupNames();
   for (long unsigned int i = 0; i < group_names.size(); i++) {
-    RCLCPP_INFO(get_logger(), "Group %ld: %s", i, group_names[i].c_str());
+    RCLCPP_INFO(node_->get_logger(), "Group %ld: %s", i,
+                group_names[i].c_str());
   }
   logCurrentPose();
 
   // Set start state of robot to current state
   move_group_arm_->setStartStateToCurrentState();
 
-  RCLCPP_INFO(get_logger(), "MotionController initialized.");
+  RCLCPP_INFO(node_->get_logger(), "MotionController initialized.");
 }
 
-void MotionController::executeTrajectory() {
-  RCLCPP_INFO(get_logger(), "Executing trajectory");
+bool MotionController::moveToNamedPose(const std::string &pose_name) {
+  move_group_arm_->setStartStateToCurrentState();
+  move_group_arm_->setNamedTarget(pose_name);
 
-  if (!drawLines()) {
-    return;
+  MoveGroupInterface::Plan plan;
+
+  auto result = move_group_arm_->plan(plan);
+  if (result != moveit::core::MoveItErrorCode::SUCCESS) {
+    RCLCPP_ERROR(node_->get_logger(), "Failed to plan to named pose '%s'",
+                 pose_name.c_str());
+    return false;
   }
 
-  //   if (!drawCross(5)) {
-  //     return;
-  //   }
+  result = move_group_arm_->execute(plan);
 
-  RCLCPP_INFO(get_logger(), "Trajectory complete");
+  move_group_arm_->stop();
+  move_group_arm_->clearPoseTargets();
+
+  if (result != moveit::core::MoveItErrorCode::SUCCESS) {
+    RCLCPP_ERROR(node_->get_logger(), "Failed to execute named pose '%s'",
+                 pose_name.c_str());
+    return false;
+  }
+
+  RCLCPP_INFO(node_->get_logger(), "Reached named pose '%s'.",
+              pose_name.c_str());
+
+  return true;
 }
 
 bool MotionController::moveAbove(const Pose &pose) {
@@ -156,13 +174,13 @@ MotionController::Pose MotionController::currentPose() const {
 void MotionController::logCurrentPose() const {
   auto pose = currentPose();
 
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(node_->get_logger(),
               "Position:"
               "\nx %.4f"
               "\ny %.4f"
               "\nz %.4f",
               pose.position.x, pose.position.y, pose.position.z);
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(node_->get_logger(),
               "Orientation:"
               "\nqx %.4f"
               "\nqy %.4f"
@@ -174,7 +192,7 @@ void MotionController::logCurrentPose() const {
 
 bool MotionController::executeCartesian(const std::vector<Pose> &waypoints,
                                         const std::string &plan_name) {
-  RCLCPP_INFO(get_logger(), "Planning %s", plan_name.c_str());
+  RCLCPP_INFO(node_->get_logger(), "Planning %s", plan_name.c_str());
 
   move_group_arm_->setStartStateToCurrentState();
   RobotTrajectory trajectory;
@@ -182,7 +200,7 @@ bool MotionController::executeCartesian(const std::vector<Pose> &waypoints,
   double fraction = move_group_arm_->computeCartesianPath(
       waypoints, END_EFFECTOR_STEP, JUMP_THRESHOLD, trajectory);
   if (fraction < MIN_CARTESIAN_FRACTION) {
-    RCLCPP_ERROR(get_logger(), "Cartesian path fraction %.3f", fraction);
+    RCLCPP_ERROR(node_->get_logger(), "Cartesian path fraction %.3f", fraction);
     return false;
   }
 
@@ -191,34 +209,31 @@ bool MotionController::executeCartesian(const std::vector<Pose> &waypoints,
   move_group_arm_->clearPoseTargets();
 
   if (result != moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "%s planning failed (fraction %.2f)",
+    RCLCPP_ERROR(node_->get_logger(), "%s planning failed (fraction %.2f)",
                  plan_name.c_str(), fraction);
     return false;
   }
 
-  RCLCPP_INFO(get_logger(), "%s complete.", plan_name.c_str());
+  RCLCPP_INFO(node_->get_logger(), "%s complete.", plan_name.c_str());
 
   return true;
 }
 
-void MotionController::setupNamedPose(const std::string &pose_name) {
-  move_group_arm_->setNamedTarget(pose_name);
-}
-
 void MotionController::getParameters() {
-  offset_distance_ = declare_parameter("offset_distance", 0.00);
-  circle_radius_ = declare_parameter("circle_radius", 0.00);
-  cross_size_ = declare_parameter("cross_size", 0.00);
-  grid_cell_size_ = declare_parameter("grid_cell_size", 0.00);
-  RCLCPP_INFO(get_logger(), "===== Motion Parameters =====");
-  RCLCPP_INFO(get_logger(), "offset_distance : %.3f m", offset_distance_);
-  RCLCPP_INFO(get_logger(), "circle_radius   : %.3f m", circle_radius_);
-  RCLCPP_INFO(get_logger(), "cross_size      : %.3f m", cross_size_);
-  RCLCPP_INFO(get_logger(), "grid_cell_size  : %.3f m", grid_cell_size_);
+  offset_distance_ = node_->declare_parameter("offset_distance", 0.00);
+  circle_radius_ = node_->declare_parameter("circle_radius", 0.00);
+  cross_size_ = node_->declare_parameter("cross_size", 0.00);
+  grid_cell_size_ = node_->declare_parameter("grid_cell_size", 0.00);
+  RCLCPP_INFO(node_->get_logger(), "===== Motion Parameters =====");
+  RCLCPP_INFO(node_->get_logger(), "offset_distance : %.3f m",
+              offset_distance_);
+  RCLCPP_INFO(node_->get_logger(), "circle_radius   : %.3f m", circle_radius_);
+  RCLCPP_INFO(node_->get_logger(), "cross_size      : %.3f m", cross_size_);
+  RCLCPP_INFO(node_->get_logger(), "grid_cell_size  : %.3f m", grid_cell_size_);
 
   for (int i = 1; i <= 9; ++i) {
-    auto values = declare_parameter<std::vector<double>>("board.cells." +
-                                                         std::to_string(i));
+    auto values = node_->declare_parameter<std::vector<double>>(
+        "board.cells." + std::to_string(i));
     if (values.size() != 7) {
       throw std::runtime_error("Cell " + std::to_string(i) +
                                " must contain [x, y, z, x, y, z, w]");

@@ -17,17 +17,16 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <moveit_msgs/msg/robot_trajectory.hpp>
 
-class MotionController : public rclcpp::Node {
+class MotionController {
   using Pose = geometry_msgs::msg::Pose;
 
 public:
-  explicit MotionController();
+  explicit MotionController(const rclcpp::Node::SharedPtr &node);
   ~MotionController();
 
   void initialize();
 
-  /// Execute a demo trajectory
-  void executeTrajectory();
+  bool moveToNamedPose(const std::string &pose_name);
 
   /// Motion primitives
   bool moveAbove(const Pose &pose);
@@ -41,6 +40,8 @@ public:
 
   bool executeStrokes(const std::vector<PathGenerator::Stroke> &strokes,
                       const std::string &name);
+
+  Pose currentPose() const;
 
 private:
   using MoveGroupInterface = moveit::planning_interface::MoveGroupInterface;
@@ -62,13 +63,13 @@ private:
   bool executeCartesian(const std::vector<Pose> &waypoints,
                         const std::string &plan_name);
 
-  Pose currentPose() const;
   Pose getCellPose(int cell) const;
   void logCurrentPose() const;
 
   //-----------------------
   // Members
   //-----------------------
+  rclcpp::Node::SharedPtr node_;
   std::shared_ptr<MoveGroupInterface> move_group_arm_;
   const JointModelGroup *joint_model_group_arm_;
 
@@ -87,7 +88,7 @@ private:
   // Planning constants
   //-----------------------
   static constexpr double JUMP_THRESHOLD = 0.0;
-  static constexpr double END_EFFECTOR_STEP = 0.005;
+  static constexpr double END_EFFECTOR_STEP = 0.003;
   static constexpr double MIN_CARTESIAN_FRACTION = 0.99;
 
   static const std::string PLANNING_GROUP_ARM;

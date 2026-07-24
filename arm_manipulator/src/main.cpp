@@ -1,19 +1,14 @@
-#include "arm_manipulator/motion_controller.hpp"
+#include "arm_manipulator/motion_action_server.hpp"
 #include <memory>
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-
-  auto controller = std::make_shared<MotionController>();
-
+  auto server = std::make_shared<MotionActionServer>();
   rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(controller);
+  executor.add_node(server);
   std::thread spin_thread([&]() { executor.spin(); });
+  server->initialize();
 
-  controller->initialize();
-  controller->executeTrajectory();
-
-  executor.cancel();
   spin_thread.join();
   rclcpp::shutdown();
   return 0;

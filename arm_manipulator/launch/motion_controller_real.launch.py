@@ -10,9 +10,9 @@ def generate_launch_description():
     config_file = os.path.join(get_package_share_directory("arm_manipulator"), "config", "motion_params_real.yaml")
 
     moveit_cpp_node = Node(
-        name="motion_controller",
+        name="motion_action_server",
         package="arm_manipulator",
-        executable="motion_controller",
+        executable="motion_action_server",
         output="screen",
         parameters=[
             moveit_config.robot_description,
