@@ -27,26 +27,34 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 )
 
 # Executables
-add_executable(motion_controller 
+add_executable(motion_action_server 
 	src/main.cpp
+	src/motion_action_server.cpp
 	src/motion_controller.cpp
 	src/path_generator.cpp
 )
-target_include_directories(motion_controller PUBLIC include)
-ament_target_dependencies(motion_controller
-    ament_cmake
+rosidl_get_typesupport_target(cpp_typesupport_target
+  ${PROJECT_NAME}
+  "rosidl_typesupport_cpp")
+
+target_link_libraries(motion_action_server
+  "${cpp_typesupport_target}")
+
+target_include_directories(motion_action_server PUBLIC include)
+ament_target_dependencies(motion_action_server
     rclcpp
     rclcpp_action
+    geometry_msgs
     moveit_core
+    moveit_ros_planning
     moveit_ros_planning_interface
     interactive_markers
-    moveit_ros_planning
     control_msgs
-	moveit_msgs
+    moveit_msgs
 )
 
 install(TARGETS 
-    motion_controller
+    motion_action_server
     DESTINATION lib/${PROJECT_NAME}
 )
 

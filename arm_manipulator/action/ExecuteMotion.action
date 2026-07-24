@@ -14,4 +14,4 @@ bool success
 ---
 # Feedback
 geometry_msgs/Pose pose
-float32 progress
+string current_step
