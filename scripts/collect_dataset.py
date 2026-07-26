@@ -3,11 +3,28 @@ import random
 import subprocess
 import time
 import glob
+import argparse
 
-TOTAL_IMAGES = 10
+parser = argparse.ArgumentParser()
 
-IMAGE_DIR = "/home/user/dataset/images/train"
-LABEL_DIR = "/home/user/dataset/labels/train"
+parser.add_argument(
+    "split",
+    choices=["train", "valid"],
+    help="Dataset split"
+)
+
+parser.add_argument(
+    "count",
+    type=int,
+    help="Number of images to generate"
+)
+
+args = parser.parse_args()
+
+TOTAL_IMAGES = args.count
+
+IMAGE_DIR = f"/home/user/dataset/images/{args.split}"
+LABEL_DIR = f"/home/user/dataset/labels/{args.split}"
 
 os.makedirs(IMAGE_DIR, exist_ok=True)
 os.makedirs(LABEL_DIR, exist_ok=True)
@@ -22,8 +39,6 @@ for label in glob.glob(os.path.join(LABEL_DIR, "*.txt")):
     os.remove(label)
 
 print("Previous dataset deleted.")
-
-spawn_script = "/home/user/ros2_ws/src/tictactoe_robot/scripts/spawn_tictactoe.sh"
 
 IMAGE_WIDTH = 1920
 IMAGE_HEIGHT = 1080
@@ -71,12 +86,26 @@ def board_to_string(board):
 def create_yolo_label(board, filename):
     labels = []
 
+    table_cx = 955.0
+    table_cy = 600.0
+    table_w  = 1050.0
+    table_h  = 800.0
+
+    labels.append(
+        f"0 "
+        f"{table_cx / IMAGE_WIDTH:.6f} "
+        f"{table_cy / IMAGE_HEIGHT:.6f} "
+        f"{table_w / IMAGE_WIDTH:.6f} "
+        f"{table_h / IMAGE_HEIGHT:.6f}"
+    )
+
     for index, obj in enumerate(board):
+        if obj is None:
+            continue
+
         x, y = cells[index]
 
-        if obj is None:
-            cls = 0
-        elif obj == "cross":
+        if obj == "cross":
             cls = 1
         else:
             cls = 2
@@ -115,7 +144,10 @@ def capture_image():
             "ros2",
             "run",
             "helper_scripts",
-            "save_image_node"
+            "save_image_node",
+            "--ros-args",
+            "-p",
+            f"split:={args.split}"
         ],
         check=True
     )
@@ -147,7 +179,7 @@ for i in range(TOTAL_IMAGES):
         check = True
     )
 
-    time.sleep(2)
+    time.sleep(1.0)
 
     capture_image()
 
@@ -166,6 +198,6 @@ for i in range(TOTAL_IMAGES):
         check=True
     )
 
-    time.sleep(1)
+    time.sleep(1.0)
 
 print("Finished.")

@@ -24,11 +24,11 @@ with open(label_path) as f:
         y2 = int((yc + bh/2) * h)
 
         if cls == 0:
-            color = (0,0,255)
-        elif cls == 1:
-            color = (255,0,0)
-        else:
             color = (0,255,0)
+        elif cls == 1:
+            color = (0,0,255)
+        else:
+            color = (255,0,0)
 
         cv2.rectangle(img, (x1,y1), (x2,y2), color, 2)
         cv2.putText(
