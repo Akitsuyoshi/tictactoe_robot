@@ -28,7 +28,9 @@ To kill properly:
 ```
 ps aux | grep gz
 
-kill -9 PID
+pkill -9 gzserver
+pkill -9 gzclient
+pkill -9 gazebo
 ```
 
 Laucn moveit2:
