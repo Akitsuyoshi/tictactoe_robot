@@ -1,7 +1,7 @@
 import cv2
 
-image_path = "/home/user/dataset/images/train/image_00005.jpg"
-label_path = "/home/user/dataset/labels/train/image_00005.txt"
+image_path = "/home/user/dataset/images/valid/image_00000.jpg"
+label_path = "/home/user/dataset/labels/valid/image_00000.txt"
 
 img = cv2.imread(image_path)
 

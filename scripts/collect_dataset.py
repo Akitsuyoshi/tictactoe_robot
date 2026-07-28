@@ -69,9 +69,11 @@ mapping = {
 
 def generate_random_board():
     return [
-        random.choice(
-            [None, "cross", "circle"]
-        )
+        random.choices(
+            ["cross", "circle", None], 
+            weights=[40, 35, 25], 
+            k=1
+        )[0]
         for _ in range(9)
     ]
 
@@ -137,6 +139,20 @@ def create_yolo_label(board, filename):
     ) as f:
         f.write("\n".join(labels))
 
+def spawn_objects(board_string):
+    subprocess.run(
+        [
+            "ros2",
+            "run",
+            "helper_scripts",
+            "spawn_objects_node",
+            "--ros-args",
+            "-p",
+            f"board:={board_string}"
+        ], 
+        check = True
+    )
+
 
 def capture_image():
     subprocess.run(
@@ -152,42 +168,7 @@ def capture_image():
         check=True
     )
 
-
-for i in range(TOTAL_IMAGES):
-
-    print("="*40)
-    print(f"Image {i+1}/{TOTAL_IMAGES}")
-
-    board = generate_random_board()
-
-    print(board)
-
-    board_string = board_to_string(board)
-
-    print(board_string)
-
-    subprocess.run(
-        [
-            "ros2",
-            "run",
-            "helper_scripts",
-            "spawn_objects_node",
-            "--ros-args",
-            "-p",
-            f"board:={board_string}"
-        ], 
-        check = True
-    )
-
-    time.sleep(1.0)
-
-    capture_image()
-
-    create_yolo_label(
-        board,
-        f"image_{i:05d}"
-    )
-
+def delete_objects():
     subprocess.run(
         [
             "ros2",
@@ -198,6 +179,29 @@ for i in range(TOTAL_IMAGES):
         check=True
     )
 
-    time.sleep(1.0)
+
+for i in range(TOTAL_IMAGES):
+
+    print("="*40)
+    print(f"Image {i+1}/{TOTAL_IMAGES}")
+
+    board = generate_random_board()
+    print(board)
+
+    board_string = board_to_string(board)
+    print(board_string)
+
+    spawn_objects(board_string)    
+    time.sleep(1)
+
+    capture_image()
+
+    create_yolo_label(
+        board,
+        f"image_{i:05d}"
+    )
+
+    delete_objects()
+    time.sleep(1)
 
 print("Finished.")
