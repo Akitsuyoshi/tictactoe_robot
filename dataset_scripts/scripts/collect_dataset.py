@@ -94,7 +94,7 @@ def create_yolo_label(board, filename):
     table_h  = 800.0
 
     labels.append(
-        f"0 "
+        f"2 "
         f"{table_cx / IMAGE_WIDTH:.6f} "
         f"{table_cy / IMAGE_HEIGHT:.6f} "
         f"{table_w / IMAGE_WIDTH:.6f} "
@@ -107,10 +107,10 @@ def create_yolo_label(board, filename):
 
         x, y = cells[index]
 
-        if obj == "cross":
+        if obj == "circle":
+            cls = 0
+        elif obj == "cross":
             cls = 1
-        else:
-            cls = 2
         
         if 0 <= index <= 2:
             w = 140
@@ -144,7 +144,7 @@ def spawn_objects(board_string):
         [
             "ros2",
             "run",
-            "helper_scripts",
+            "dataset_scripts",
             "spawn_objects_node",
             "--ros-args",
             "-p",
@@ -161,7 +161,7 @@ def capture_image():
         [
             "ros2",
             "run",
-            "helper_scripts",
+            "dataset_scripts",
             "save_image_node",
             "--ros-args",
             "-p",
@@ -175,7 +175,7 @@ def delete_objects():
         [
             "ros2",
             "run",
-            "helper_scripts",
+            "dataset_scripts",
             "delete_objects_node"
         ],
         check=True
