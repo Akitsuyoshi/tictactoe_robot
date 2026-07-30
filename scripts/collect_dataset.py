@@ -47,12 +47,12 @@ cells = [
     # Top row
     (770, 390),
     (950, 390),
-    (1130, 390),
+    (1140, 390),
 
     # Middle row
-    (740, 530),
-    (955, 530),
-    (1160, 530),
+    (740, 535),
+    (955, 535),
+    (1160, 535),
 
     # Bottom row
     (710, 695),
@@ -71,7 +71,7 @@ def generate_random_board():
     return [
         random.choices(
             ["cross", "circle", None], 
-            weights=[40, 35, 25], 
+            weights=[40, 40, 20], 
             k=1
         )[0]
         for _ in range(9)
@@ -113,13 +113,13 @@ def create_yolo_label(board, filename):
             cls = 2
         
         if 0 <= index <= 2:
-            w = 125
+            w = 140
             h = 125
         elif 3 <= index <= 5:
-            w = 135
+            w = 155
             h = 135
         else:
-            w = 150
+            w = 175
             h = 150
 
         labels.append(
@@ -148,7 +148,9 @@ def spawn_objects(board_string):
             "spawn_objects_node",
             "--ros-args",
             "-p",
-            f"board:={board_string}"
+            f"board:={board_string}",
+            "-p",
+            f"is_train:={args.split == 'train'}",
         ], 
         check = True
     )
@@ -191,7 +193,7 @@ for i in range(TOTAL_IMAGES):
     board_string = board_to_string(board)
     print(board_string)
 
-    spawn_objects(board_string)    
+    spawn_objects(board_string)
     time.sleep(1)
 
     capture_image()
