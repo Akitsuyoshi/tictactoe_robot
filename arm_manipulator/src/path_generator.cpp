@@ -34,11 +34,15 @@ PathGenerator::generateGrid(const Pose &center, double cell_size) {
 
   double half = cell_size * 1.5;
 
-  strokes.push_back({offsetPose(center, half, cell_size / 2),
-                     offsetPose(center, -half, cell_size / 2)});
+  // Vertical lines on the board needs a bit more pressure to be drawn
+  Pose vertical_pose = center;
+  vertical_pose.position.z -= 0.0006;
 
-  strokes.push_back({offsetPose(center, half, -cell_size / 2),
-                     offsetPose(center, -half, -cell_size / 2)});
+  strokes.push_back({offsetPose(vertical_pose, half, cell_size / 2),
+                     offsetPose(vertical_pose, -half, cell_size / 2)});
+
+  strokes.push_back({offsetPose(vertical_pose, half, -cell_size / 2),
+                     offsetPose(vertical_pose, -half, -cell_size / 2)});
 
   strokes.push_back({offsetPose(center, cell_size / 2, half),
                      offsetPose(center, cell_size / 2, -half)});
