@@ -17,14 +17,8 @@ find_package(interactive_markers REQUIRED)
 find_package(geometric_shapes REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
 find_package(geometry_msgs REQUIRED)
-
-# Generate the acton interfaces
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "action/ExecuteMotion.action"
-  DEPENDENCIES geometry_msgs
-)
+find_package(tictactoe_interfaces REQUIRED)
 
 # Executables
 add_executable(motion_action_server 
@@ -33,17 +27,12 @@ add_executable(motion_action_server
 	src/motion_controller.cpp
 	src/path_generator.cpp
 )
-rosidl_get_typesupport_target(cpp_typesupport_target
-  ${PROJECT_NAME}
-  "rosidl_typesupport_cpp")
-
-target_link_libraries(motion_action_server
-  "${cpp_typesupport_target}")
 
 target_include_directories(motion_action_server PUBLIC include)
 ament_target_dependencies(motion_action_server
     rclcpp
     rclcpp_action
+	tictactoe_interfaces
     geometry_msgs
     moveit_core
     moveit_ros_planning
@@ -75,7 +64,5 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-
-ament_export_dependencies(rosidl_default_runtime)
 
 ament_package()

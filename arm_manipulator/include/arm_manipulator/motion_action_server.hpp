@@ -5,12 +5,12 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 
-#include "arm_manipulator/action/execute_motion.hpp"
 #include "arm_manipulator/motion_controller.hpp"
+#include "tictactoe_interfaces/action/execute_motion.hpp"
 
 class MotionActionServer : public rclcpp::Node {
 public:
-  using ExecuteMotion = arm_manipulator::action::ExecuteMotion;
+  using ExecuteMotion = tictactoe_interfaces::action::ExecuteMotion;
   using GoalHandle = rclcpp_action::ServerGoalHandle<ExecuteMotion>;
 
   MotionActionServer();
