@@ -1,15 +1,17 @@
-  motion_controller:
+  motion_action_server:
     ros__parameters:
-      offset_distance: 0.02
-      circle_radius: 0.02
-      cross_size: 0.04
+      offset_distance: 0.015
+      circle_radius: 0.018
+      cross_size: 0.0275
       grid_cell_size: 0.045
-      board.cells.1: [0.245, 0.065, 0.3, 0.0, 1.0, 0.0, 0.0]
-      board.cells.2: [0.245, 0.020, 0.3, 0.0, 1.0, 0.0, 0.0]
-      board.cells.3: [0.245, -0.025, 0.3, 0.0, 1.0, 0.0, 0.0]
-      board.cells.4: [0.200, 0.065, 0.3, 0.0, 1.0, 0.0, 0.0]
-      board.cells.5: [0.200, 0.020, 0.23, 0.0, 1.0, 0.0, 0.0]
-      board.cells.6: [0.200, -0.025, 0.3, 0.0, 1.0, 0.0, 0.0]
-      board.cells.7: [0.155, 0.065, 0.3, 0.0, 1.0, 0.0, 0.0]
-      board.cells.8: [0.155, 0.020, 0.3, 0.0, 1.0, 0.0, 0.0]
-      board.cells.9: [0.155, -0.025, 0.3, 0.0, 1.0, 0.0, 0.0]
+      # Change X and Z coords accordingly, while keeping Y coord
+      # right columns,3 6 9, should have -0.0005 on z axis compared to other cells.
+      board.cells.1: [0.250, -0.045,0.1975, 0.0, 1.0, 0.0, 0.0]
+      board.cells.2: [0.205, -0.045,0.1975, 0.0, 1.0, 0.0, 0.0]
+      board.cells.3: [0.160, -0.045,0.1970, 0.0, 1.0, 0.0, 0.0]
+      board.cells.4: [0.250, 0.000, 0.1975, 0.0, 1.0, 0.0, 0.0]
+      board.cells.5: [0.205, 0.000, 0.1975, 0.0, 1.0, 0.0, 0.0]
+      board.cells.6: [0.160, 0.000, 0.1970, 0.0, 1.0, 0.0, 0.0]
+      board.cells.7: [0.250, 0.045, 0.1975, 0.0, 1.0, 0.0, 0.0]
+      board.cells.8: [0.205, 0.045, 0.1975, 0.0, 1.0, 0.0, 0.0]
+      board.cells.9: [0.160, 0.045, 0.1970, 0.0, 1.0, 0.0, 0.0]
