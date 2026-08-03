@@ -211,6 +211,7 @@ bool MotionController::executeCartesian(const std::vector<Pose> &waypoints,
   if (result != moveit::core::MoveItErrorCode::SUCCESS) {
     RCLCPP_ERROR(node_->get_logger(), "%s planning failed (fraction %.2f)",
                  plan_name.c_str(), fraction);
+    logCurrentPose();
     return false;
   }
 

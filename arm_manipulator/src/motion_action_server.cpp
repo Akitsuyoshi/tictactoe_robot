@@ -27,7 +27,8 @@ rclcpp_action::GoalResponse MotionActionServer::handleGoal(
   RCLCPP_INFO(get_logger(), "Received goal: command=%d cell=%d", goal->command,
               goal->cell);
 
-  if (goal->cell < 1 || goal->cell > 9) {
+  if ((goal->command == 1 || goal->command == 2) &&
+      (goal->cell < 1 || goal->cell > 9)) {
     return rclcpp_action::GoalResponse::REJECT;
   }
 

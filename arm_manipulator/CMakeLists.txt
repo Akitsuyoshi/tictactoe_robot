@@ -42,8 +42,21 @@ ament_target_dependencies(motion_action_server
     moveit_msgs
 )
 
+add_executable(motion_action_client 
+    src/motion_action_client.cpp
+)
+
+target_include_directories(motion_action_client PUBLIC include)
+ament_target_dependencies(motion_action_client
+    rclcpp
+    rclcpp_action
+    geometry_msgs
+    tictactoe_interfaces
+)
+
 install(TARGETS 
     motion_action_server
+	motion_action_client
     DESTINATION lib/${PROJECT_NAME}
 )
 
