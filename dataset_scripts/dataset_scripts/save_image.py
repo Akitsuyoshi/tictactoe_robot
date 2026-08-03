@@ -10,16 +10,22 @@ class CameraSubscriber(Node):
 
     def __init__(self):
         super().__init__('camera_dataset_saver')
+
+        self.declare_parameter("split", "train")
+        split = self.get_parameter("split").value
+
+        topic_n = '/camera1/image_raw'
+        if split == "test":
+            topic_n = '/camera/D435/color/image_raw'
+
         self.subscription = self.create_subscription(
             Image,
-            '/camera1/image_raw',
+            topic_n,
             self.listener_callback,
             10
         )
         self.br = CvBridge()
 
-        self.declare_parameter("split", "train")
-        split = self.get_parameter("split").value
 
         self.save_dir = f"/home/user/dataset/images/{split}"
         os.makedirs(self.save_dir, exist_ok=True)
