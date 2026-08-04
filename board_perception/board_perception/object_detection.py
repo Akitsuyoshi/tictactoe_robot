@@ -13,19 +13,29 @@ class ObjectDetection(Node):
     def __init__(self) -> None:
         super().__init__("object_detection")
 
-        self.detection_model = YOLO(
-            "/home/user/ros2_ws/src/tictactoe_robot/board_perception/weights/best.onnx",
-            task="detect"
-        )
-        print(f"Model is loaded, class: ${self.detection_model.names}")
-        
-        self.yolo_inference = YoloInference()
+        # Parameters
+        self.declare_parameter("model_path", "")
+        self.declare_parameter("image_topic", "/camera/D435/color/image_raw")
+        model_path = self.get_parameter("model_path").value
+        image_topic = self.get_parameter("image_topic").value
 
+
+        self.detection_model = YOLO(model_path, task="detect")
+        print(f"Model is loaded, class: ${self.detection_model.names}")
+
+        self.latest_image = None
+        self.latest_header = None
+        
         self.subscription = self.create_subscription(
             Image,
-            "/camera1/image_raw",
+            image_topic,
             self.camera_callback,
-            10
+            1,
+        )
+
+        self.timer = self.create_timer(
+            0.5,
+            self.inference_timer,
         )
         
         self.yolo_pub = self.create_publisher(YoloInference, "/yolo_inference", 1)
@@ -33,44 +43,47 @@ class ObjectDetection(Node):
 
     
     def camera_callback(self, msg: Image) -> None:
-        img = bridge.imgmsg_to_cv2(msg, "bgr8")
-        results = self.detection_model(img)
+        self.latest_image = bridge.imgmsg_to_cv2(msg, "bgr8")
+        self.latest_header = msg.header
 
-        self.yolo_inference.header = msg.header
+
+    def inference_timer(self) -> None:
+        if self.latest_image is None:
+            return
+        
+        results = self.detection_model(self.latest_image)
+        inference_msg = YoloInference()
+        inference_msg.header = self.latest_header
 
         for r in results:
             for box in r.boxes:
-                self.inf_result = InferenceResult()
+
+                det = InferenceResult()
 
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                class_id = int(box.cls[0])
-                confidence = float(box.conf[0])
 
-                self.inf_result.class_name = self.detection_model.names[class_id]
-                self.inf_result.confidence = confidence
+                det.class_name = self.detection_model.names[int(box.cls[0])]
+                det.confidence = float(box.conf[0])
 
-                self.inf_result.left = x1
-                self.inf_result.top = y1
-                self.inf_result.right = x2
-                self.inf_result.bottom = y2
+                det.left = x1
+                det.top = y1
+                det.right = x2
+                det.bottom = y2
 
-                self.inf_result.box_width = x2 - x1
-                self.inf_result.box_height = y2 - y1
+                det.box_width = x2 - x1
+                det.box_height = y2 - y1
 
-                self.inf_result.x = x1 + self.inf_result.box_width / 2.0
-                self.inf_result.y = y1 + self.inf_result.box_height / 2.0
+                det.x = x1 + det.box_width / 2.0
+                det.y = y1 + det.box_height / 2.0
 
-                self.yolo_inference.detections.append(self.inf_result)
+                inference_msg.detections.append(det)
 
-        # Publish annotated image
-        annotated_frame = results[0].plot()
-        img_msg = bridge.cv2_to_imgmsg(annotated_frame)
-        img_msg.header = msg.header
+        annotated = results[0].plot()
+        img_msg = bridge.cv2_to_imgmsg(annotated, encoding="bgr8")
+        img_msg.header = self.latest_header
+
         self.img_pub.publish(img_msg)
-
-        # Publish object detection inferece
-        self.yolo_pub.publish(self.yolo_inference)
-        self.yolo_inference.detections.clear()
+        self.yolo_pub.publish(inference_msg)
 
 
 def main(args=None) -> None:
